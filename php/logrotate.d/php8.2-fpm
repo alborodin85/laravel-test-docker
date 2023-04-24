@@ -1,0 +1,14 @@
+/var/log/php/*.log {
+	rotate 14
+	weekly
+	missingok
+	notifempty
+	compress
+	create 0660 www www
+	delaycompress
+	postrotate
+		if [ -x /usr/lib/php/php8.2-fpm-reopenlogs ]; then
+			/usr/lib/php/php8.2-fpm-reopenlogs;
+		fi
+	endscript
+}

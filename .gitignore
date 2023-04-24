@@ -1,0 +1,14 @@
+.env
+docker-compose.yml
+php/Dockerfile
+entrypoint.sh
+laravel-it5.tar
+php/web/html
+network.txt
+php/ssh_conf/ssh_host_ecdsa_key
+php/ssh_conf/ssh_host_ecdsa_key.pub
+php/ssh_conf/ssh_host_ed25519_key
+php/ssh_conf/ssh_host_ed25519_key.pub
+php/ssh_conf/ssh_host_rsa_key
+php/ssh_conf/ssh_host_rsa_key.pub
+

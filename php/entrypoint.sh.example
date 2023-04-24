@@ -1,0 +1,22 @@
+#!/bin/bash
+
+cmd="$@"
+
+env > /etc/environment
+source /etc/environment
+
+if [[ -n $DB_MAIN_HOST_DOCKER ]]; then
+  echo "Mysql checking..."
+  until mysql -uroot -p$DB_MAIN_PASSWORD_DOCKER -h $DB_MAIN_HOST_DOCKER $DB_MAIN_DATABASE_DOCKER -e "select VERSION();"
+  do
+    echo "Wating for mysql..."
+    sleep 3
+  done
+  echo "Mysql ready!"
+fi
+
+laravel-echo-server client:add echo_client
+
+php artisan migrate --seed
+
+exec $cmd

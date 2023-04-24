@@ -1,0 +1,98 @@
+version: '3.5'
+
+services:
+  laravel-test-selenium:
+    image: selenium/standalone-chrome:4.8.1-20230306
+    shm_size: '2gb'
+    container_name: laravel-test-selenium
+    hostname: laravel-test-selenium
+    restart: "unless-stopped"
+    networks:
+      basic-macvlan50-net:
+        ipv4_address: 192.168.1.146
+      default:
+
+  laravel-test-php:
+    env_file: ./.env
+    image: laravel-it5
+    container_name: laravel-test-php
+    hostname: laravel-test-php
+    restart: "unless-stopped"
+    build:
+      context: ./php
+      args:
+        USER_ID: ${USER_ID}
+        GROUP_ID: ${USER_ID}
+    environment:
+      LARAVEL_ECHO_SERVER_REDIS_HOST: "LARAVEL_ECHO"
+    volumes:
+      - ./php/logrotate.d:/etc/logrotate.d
+      - ./php/.bashrc:/home/www/.bashrc
+      - ./php/ssh_conf:/etc/ssh
+      - ./php/supervisor_conf:/etc/supervisor
+      - ./php/nginx_conf:/etc/nginx
+
+      - ./php/php_conf/apache2/php.ini:/etc/php/8.2/apache2/php.ini
+      - ./php/php_conf/cli/php.ini:/etc/php/8.2/cli/php.ini
+      - ./php/php_conf/fpm/php.ini:/etc/php/8.2/fpm/php.ini
+      - ./php/php_conf/fpm/php-fpm.conf:/etc/php/8.2/fpm/php-fpm.conf
+      - ./php/php_conf/fpm/pool.d:/etc/php/8.2/fpm/pool.d
+
+      - ./php/web:/var/www
+      - ./logs/php:/var/log/php
+      - ./logs/supervisor:/var/log/supervisor
+      - ./logs/nginx:/var/log/nginx
+      - /home/it5_dev/.ssh:/home/www/.ssh
+    networks:
+      basic-macvlan50-net:
+        ipv4_address: 192.168.1.143
+      default:
+    command: ["supervisord"]
+    depends_on:
+      - laravel-test-mysql
+
+  laravel-test-mysql:
+    hostname: "${DB_MAIN_HOST_DOCKER}"
+    image: mysql:8.0.32
+    restart: unless-stopped
+    container_name: "${DB_MAIN_HOST_DOCKER}"
+    environment:
+      MYSQL_DATABASE: "${DB_MAIN_DATABASE_DOCKER}"
+      MYSQL_ROOT_PASSWORD: "${DB_MAIN_PASSWORD_DOCKER}"
+    volumes:
+      - laravel-test-mysql:/var/lib/mysql
+      - ./logs/mysql:/var/log/mysql
+
+  laravel-test-mysql-test:
+    hostname: "${DB_TEST_HOST_DOCKER}"
+    image: mysql:8.0.32
+    restart: unless-stopped
+    container_name: "${DB_TEST_HOST_DOCKER}"
+    environment:
+      MYSQL_DATABASE: "${DB_TEST_DATABASE_DOCKER}"
+      MYSQL_ROOT_PASSWORD: "${DB_TEST_PASSWORD_DOCKER}"
+
+  laravel-test-pma:
+    image: phpmyadmin/phpmyadmin:latest
+    restart: unless-stopped
+    container_name: laravel-test-pma
+    environment:
+      PMA_HOST: "${DB_MAIN_HOST_DOCKER}"
+      MYSQL_ROOT_PASSWORD: "${DB_MAIN_PASSWORD_DOCKER}"
+    networks:
+      basic-macvlan50-net:
+        ipv4_address: 192.168.1.145
+      default:
+    depends_on:
+      - laravel-test-mysql
+
+networks:
+  default:
+    name: common-bridge
+    external: true
+  basic-macvlan50-net:
+    name: basic-macvlan50-net
+    external: true
+
+volumes:
+  laravel-test-mysql:
